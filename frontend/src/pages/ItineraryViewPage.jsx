@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Search, Filter, ArrowDown, MapPin, 
-  Calendar, List, Grid, ChevronRight,
-  TrendingUp, DollarSign
+  ChevronRight, DollarSign
 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 
 const ItineraryViewPage = () => {
   const { id } = useParams();
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
 
   const itineraryData = [
     {

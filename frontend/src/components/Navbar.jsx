@@ -21,7 +21,6 @@ const Navbar = () => {
           <Link to="/build-itinerary/1">Build Itinerary</Link>
           <Link to="/itinerary-view/1">View Itinerary</Link>
           <Link to="/create-trip" style={{ color: 'var(--primary)' }}>Plan Trip</Link>
-          <Link to="/">My trips</Link>
           <Link to="/auth" className="btn-secondary" style={{ padding: '8px 20px', fontSize: '14px' }}>Login</Link>
         </div>
       </div>
