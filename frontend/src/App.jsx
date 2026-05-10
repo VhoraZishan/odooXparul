@@ -7,6 +7,8 @@ import CreateTripPage from './pages/CreateTripPage';
 import TripDetailsPage from './pages/TripDetailsPage';
 import BuildItineraryPage from './pages/BuildItineraryPage';
 import ItineraryViewPage from './pages/ItineraryViewPage';
+import ProfilePage from './pages/ProfilePage';
+import DiscoveryPage from './pages/DiscoveryPage';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         <Route path="/trip/:id" element={<TripDetailsPage />} />
         <Route path="/build-itinerary/:id" element={<BuildItineraryPage />} />
         <Route path="/itinerary-view/:id" element={<ItineraryViewPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/discover" element={<DiscoveryPage />} />
       </Routes>
     </Router>
   );
