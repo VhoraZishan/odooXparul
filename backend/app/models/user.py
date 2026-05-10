@@ -6,7 +6,9 @@ from app.database import Base
 class Profile(Base):
     __tablename__ = "profiles"
 
-    id = Column(UUID(as_uuid=True), primary_key=True) # References auth.users(id) in Supabase
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    email = Column(String, unique=True, nullable=False, index=True)
+    hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
     avatar_url = Column(String)
     phone = Column(String)

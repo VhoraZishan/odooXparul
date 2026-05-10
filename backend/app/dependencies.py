@@ -1,39 +1,33 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from app.supabase_client import supabase
+from jose import jwt, JWTError
 from app.database import get_db
 from app.models.user import Profile
+from app.auth_utils import SECRET_KEY, ALGORITHM
 
 security = HTTPBearer()
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     token = credentials.credentials
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase client not configured")
-
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
     try:
-        # Get user from Supabase using the token
-        user_response = supabase.auth.get_user(token)
-        if not user_response or not user_response.user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        # Decode local JWT token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
         
-        user_id = user_response.user.id
+    # Verify user exists in database
+    profile = db.query(Profile).filter(Profile.id == user_id).first()
+    if profile is None:
+        raise credentials_exception
         
-        # Verify user exists in our local profiles table
-        profile = db.query(Profile).filter(Profile.id == user_id).first()
-        if not profile:
-            raise HTTPException(status_code=404, detail="User profile not found")
-            
-        return profile
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    return profile

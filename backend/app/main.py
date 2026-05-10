@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 
+from app.database import engine, Base
 from app.routers import trips, auth, users, explore, itinerary, expenses, checklists, notes, community
+
+# Generate local database tables on startup
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
