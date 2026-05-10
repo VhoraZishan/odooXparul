@@ -13,43 +13,22 @@ def signup(user_data: UserSignup, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Supabase client not configured")
 
     try:
-        # 1. Sign up the user in Supabase Auth
+        # 1. Sign up the user in Supabase Auth, passing the metadata for the database trigger
         response = supabase.auth.sign_up({
             "email": user_data.email,
-            "password": user_data.password
+            "password": user_data.password,
+            "options": {
+                "data": {
+                    "full_name": user_data.full_name,
+                    "phone": user_data.phone
+                }
+            }
         })
 
         if not response.user:
             raise HTTPException(status_code=400, detail="Signup failed")
 
         user_id = response.user.id
-
-        # 2. Check if Profile already exists (it might have been auto-created by a Supabase database trigger!)
-        existing_profile = db.query(Profile).filter(Profile.id == user_id).first()
-        
-        if existing_profile:
-            # If the profile exists, just update it with the new info we received
-            existing_profile.full_name = user_data.full_name
-            existing_profile.phone = user_data.phone
-        else:
-            # 3. Create the custom Profile in our database since it doesn't exist yet
-            new_profile = Profile(
-                id=user_id,
-                full_name=user_data.full_name,
-                phone=user_data.phone
-            )
-            db.add(new_profile)
-        
-        # 4. Check if UserPreferences exist, create if not
-        existing_prefs = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
-        if not existing_prefs:
-            new_prefs = UserPreference(
-                user_id=user_id,
-                default_currency="USD",
-            )
-            db.add(new_prefs)
-        
-        db.commit()
 
         return AuthResponse(
             access_token=response.session.access_token,
