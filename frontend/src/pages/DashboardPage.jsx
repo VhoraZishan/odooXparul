@@ -26,28 +26,26 @@ const DashboardPage = () => {
         }
 
         const data = await fetchAPI('/users/me/trips');
-          const formattedTrips = [];
-          const colors = { upcoming: '#FF5733', ongoing: '#EC4899', completed: '#0EA5E9' };
-          
-          ['ongoing', 'upcoming', 'completed'].forEach(status => {
-            if (data[status]) {
-              data[status].forEach(trip => {
-                formattedTrips.push({
-                  id: trip.id,
-                  title: trip.title,
-                  date: trip.start_date || 'Unscheduled',
-                  budget: trip.budget_amount
-                    ? `${trip.currency || 'USD'} ${parseFloat(trip.budget_amount).toLocaleString()}`
-                    : 'No budget set',
-                  status: status.charAt(0).toUpperCase() + status.slice(1),
-                  color: colors[status]
-                });
+        const formattedTrips = [];
+        const colors = { upcoming: '#FF5733', ongoing: '#EC4899', completed: '#0EA5E9' };
+        
+        ['ongoing', 'upcoming', 'completed'].forEach(status => {
+          if (data[status]) {
+            data[status].forEach(trip => {
+              formattedTrips.push({
+                id: trip.id,
+                title: trip.title,
+                date: trip.start_date || 'Unscheduled',
+                budget: trip.budget_amount
+                  ? `${trip.currency || 'USD'} ${parseFloat(trip.budget_amount).toLocaleString()}`
+                  : 'No budget set',
+                status: status.charAt(0).toUpperCase() + status.slice(1),
+                color: colors[status]
               });
-            }
-          });
-          });
-          setRecentTrips(formattedTrips);
-        }
+            });
+          }
+        });
+        setRecentTrips(formattedTrips);
 
         const exploreData = await fetchAPI('/explore/destinations');
         if (exploreData.length > 0) {
