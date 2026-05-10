@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from decimal import Decimal
-from datetime import datetime, date
+import datetime
 from uuid import UUID
 
 class ExpenseBase(BaseModel):
@@ -10,7 +10,7 @@ class ExpenseBase(BaseModel):
     currency: Optional[str] = "USD"
     category: Optional[str] = None
     receipt_url: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[datetime.date] = None
     notes: Optional[str] = None
 
 class ExpenseCreate(ExpenseBase):
@@ -20,7 +20,7 @@ class ExpenseResponse(ExpenseBase):
     id: UUID
     trip_id: UUID
     paid_by: UUID
-    created_at: datetime
+    created_at: datetime.datetime
 
     class Config:
         from_attributes = True
@@ -34,8 +34,8 @@ class InvoiceResponse(BaseModel):
     discount: Decimal
     total: Decimal
     status: str
-    generated_date: date
-    created_at: datetime
+    generated_date: datetime.date
+    created_at: datetime.datetime
 
     class Config:
         from_attributes = True
