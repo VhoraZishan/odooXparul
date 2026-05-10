@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict
 from datetime import datetime
 
 from app.database import get_db
@@ -26,7 +26,7 @@ def update_me(profile_update: ProfileUpdate, current_user: Profile = Depends(get
     db.refresh(current_user)
     return current_user
 
-@router.get("/me/trips")
+@router.get("/me/trips", response_model=Dict[str, List[TripResponse]])
 def get_my_trips(current_user: Profile = Depends(get_current_user), db: Session = Depends(get_db)):
     # Get all trips user is a member of
     memberships = db.query(TripMember).filter(TripMember.user_id == current_user.id).all()
