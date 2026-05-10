@@ -1,8 +1,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+  const checkAuth = () => {
+    setIsAuthenticated(!!localStorage.getItem('token'));
+  };
+
+  useEffect(() => {
+    checkAuth();
+    window.addEventListener('auth-change', checkAuth);
+    return () => window.removeEventListener('auth-change', checkAuth);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_id');
+    checkAuth();
+    navigate('/auth');
+  };
+
   return (
     <nav className="navbar" style={{
       position: 'sticky',
@@ -37,6 +59,15 @@ const Navbar = () => {
           }}>
             <User size={20} />
           </Link>
+          {isAuthenticated && (
+            <>
+              <Link to="/create-trip" style={{ color: 'var(--primary)' }}>Plan Trip</Link>
+              <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 20px', fontSize: '14px', cursor: 'pointer', border: 'none' }}>Logout</button>
+            </>
+          )}
+          {!isAuthenticated && (
+            <Link to="/auth" className="btn-secondary" style={{ padding: '8px 20px', fontSize: '14px' }}>Login</Link>
+          )}
         </div>
       </div>
     </nav>

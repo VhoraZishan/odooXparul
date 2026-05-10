@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, FileText, Image as ImageIcon, Save, ArrowLeft, Video, MapPin } from 'lucide-react';
+import { Calendar, FileText, Image as ImageIcon, Save, ArrowLeft, Video, MapPin, DollarSign } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
 const CreateTripPage = () => {
@@ -11,12 +11,41 @@ const CreateTripPage = () => {
     endDate: '',
     place: '',
     description: '',
+    budgetAmount: '',
+    currency: 'USD',
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate save
-    navigate('/');
+    const token = localStorage.getItem('token');
+    if (!token) return navigate('/auth');
+
+    try {
+      const response = await fetch('http://localhost:8000/trips', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: formData.name,
+          description: formData.description + (formData.place ? `\n\nIntended Destination: ${formData.place}` : ''),
+          start_date: formData.startDate,
+          end_date: formData.endDate,
+          currency: formData.currency,
+          budget_amount: formData.budgetAmount ? parseFloat(formData.budgetAmount) : null,
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        navigate(`/trip/${data.id}`);
+      } else {
+        console.error("Failed to create trip");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -148,7 +177,51 @@ const CreateTripPage = () => {
                 </div>
               </div>
 
-              {/* Description */}
+              {/* Estimated Budget */}
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', marginBottom: '12px', color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Estimated Budget (Optional)
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <DollarSign size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="e.g. 2500"
+                      style={{ width: '100%', paddingLeft: '48px', fontSize: '16px', padding: '16px 20px 16px 48px' }}
+                      value={formData.budgetAmount}
+                      onChange={(e) => setFormData({...formData, budgetAmount: e.target.value})}
+                    />
+                  </div>
+                  <select
+                    style={{
+                      fontSize: '16px',
+                      padding: '16px 20px',
+                      appearance: 'none',
+                      background: 'white',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      minWidth: '90px'
+                    }}
+                    value={formData.currency}
+                    onChange={(e) => setFormData({...formData, currency: e.target.value})}
+                  >
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="INR">INR</option>
+                    <option value="JPY">JPY</option>
+                    <option value="AUD">AUD</option>
+                    <option value="CAD">CAD</option>
+                    <option value="SGD">SGD</option>
+                  </select>
+                </div>
+              </div>
+
+
               <div>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', marginBottom: '12px', color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                   Trip Description

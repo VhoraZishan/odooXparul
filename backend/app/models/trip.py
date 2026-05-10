@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Date, Boolean, ForeignKey, DateTime, text
+from sqlalchemy import Column, String, Date, Boolean, ForeignKey, DateTime, text, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -15,6 +15,7 @@ class Trip(Base):
     end_date = Column(Date)
     status = Column(String, server_default="planning") # 'planning', 'active', 'completed', 'cancelled'
     is_public = Column(Boolean, server_default="false")
+    budget_amount = Column(Numeric(10, 2), nullable=True)
     currency = Column(String, server_default="USD")
     created_at = Column(DateTime(timezone=True), server_default=text("now()"))
     updated_at = Column(DateTime(timezone=True), server_default=text("now()"))

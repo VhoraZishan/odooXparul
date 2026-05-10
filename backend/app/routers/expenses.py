@@ -7,7 +7,7 @@ from decimal import Decimal
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import Profile
-from app.models.trip import TripMember
+from app.models.trip import TripMember, Trip
 from app.models.expense import Expense, Invoice
 
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, InvoiceResponse, BudgetInsightsResponse
@@ -41,9 +41,8 @@ def get_budget_insights(trip_id: str, current_user: Profile = Depends(get_curren
     
     total_spent = db.query(func.sum(Expense.amount)).filter(Expense.trip_id == trip_id).scalar() or Decimal('0.0')
     
-    # In a full app, total budget might be set on the Trip or calculated.
-    # For now, we mock a total budget or assume it is 0 if not set.
-    total_budget = Decimal('20000.0') # Example placeholder
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    total_budget = trip.budget_amount if trip and trip.budget_amount else Decimal('0.0')
     remaining = total_budget - total_spent
     
     return {

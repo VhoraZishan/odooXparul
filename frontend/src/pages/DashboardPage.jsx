@@ -1,20 +1,82 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, MapPin, Calendar, Users, DollarSign, ArrowRight, TrendingUp, Compass, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const DashboardPage = () => {
-  const recentTrips = [
-    { id: 1, title: 'Summer in Europe', date: 'June 2025', budget: '$2,500', status: 'Upcoming', color: '#FF5733' },
-    { id: 2, title: 'Tokyo Exploration', date: 'April 2025', budget: '$3,200', status: 'Ongoing', color: '#EC4899' },
-    { id: 3, title: 'Bali Relaxation', date: 'December 2024', budget: '$1,800', status: 'Completed', color: '#0EA5E9' },
-  ];
-
-  const recommendations = [
+  const [recentTrips, setRecentTrips] = useState([]);
+  const [userName, setUserName] = useState('Traveler');
+  const [recommendations, setRecommendations] = useState([
     { id: 1, city: 'Paris', country: 'France', img: '/images/paris.png', price: '$1,200+' },
     { id: 2, city: 'Tokyo', country: 'Japan', img: '/images/tokyo.png', price: '$1,500+' },
     { id: 3, city: 'Bali', country: 'Indonesia', img: '/images/bali.png', price: '$800+' },
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        // Fetch user profile for the real name
+        const profileRes = await fetch('http://localhost:8000/users/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          if (profile.full_name) {
+            setUserName(profile.full_name.split(' ')[0]);
+          }
+        }
+
+        const res = await fetch('http://localhost:8000/users/me/trips', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          const formattedTrips = [];
+          const colors = { upcoming: '#FF5733', ongoing: '#EC4899', completed: '#0EA5E9' };
+          
+          ['ongoing', 'upcoming', 'completed'].forEach(status => {
+            if (data[status]) {
+              data[status].forEach(trip => {
+                formattedTrips.push({
+                  id: trip.id,
+                  title: trip.title,
+                  date: trip.start_date || 'Unscheduled',
+                  budget: trip.budget_amount
+                    ? `${trip.currency || 'USD'} ${parseFloat(trip.budget_amount).toLocaleString()}`
+                    : 'No budget set',
+                  status: status.charAt(0).toUpperCase() + status.slice(1),
+                  color: colors[status]
+                });
+              });
+            }
+          });
+          setRecentTrips(formattedTrips);
+        }
+
+        const exploreRes = await fetch('http://localhost:8000/explore/destinations');
+        if (exploreRes.ok) {
+          const exploreData = await exploreRes.json();
+          if (exploreData.length > 0) {
+            setRecommendations(exploreData.slice(0, 3).map((dest, i) => ({
+              id: dest.id,
+              city: dest.name,
+              country: dest.country || '',
+              img: `/images/${['paris', 'tokyo', 'bali'][i % 3]}.png`,
+              price: 'Explore'
+            })));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard data", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="dashboard-container" style={{ padding: '40px 0', background: 'var(--bg-main)' }}>
@@ -27,7 +89,7 @@ const DashboardPage = () => {
               animate={{ opacity: 1, x: 0 }}
               style={{ fontSize: '36px', marginBottom: '8px' }}
             >
-              Welcome back, <span className="text-gradient">Traveler!</span>
+              Welcome back, <span className="text-gradient">{userName}!</span>
             </motion.h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '18px' }}>Where will your next adventure take you?</p>
           </div>
@@ -135,18 +197,18 @@ const DashboardPage = () => {
           {/* Sidebar */}
           <aside style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             
-            {/* Quick Actions / Budget Highlights */}
+            {/* Quick Actions / Trip Stats Highlights */}
             <div className="card" style={{ padding: '24px', background: 'linear-gradient(135deg, #FF5733, #EC4899)', color: 'white' }}>
-              <h3 style={{ fontSize: '20px', marginBottom: '16px' }}>Budget Summary</h3>
+              <h3 style={{ fontSize: '20px', marginBottom: '16px' }}>Travel Stats</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <p style={{ opacity: 0.8, fontSize: '13px' }}>Total Saved</p>
-                  <p style={{ fontSize: '28px', fontWeight: '800' }}>$12,450</p>
+                  <p style={{ opacity: 0.8, fontSize: '13px' }}>Total Planned Trips</p>
+                  <p style={{ fontSize: '28px', fontWeight: '800' }}>{recentTrips.length}</p>
                 </div>
                 <div style={{ height: '4px', background: 'rgba(255,255,255,0.3)', borderRadius: '2px' }}>
-                  <div style={{ width: '65%', height: '100%', background: 'white', borderRadius: '2px' }} />
+                  <div style={{ width: `${Math.min(recentTrips.length * 10, 100)}%`, height: '100%', background: 'white', borderRadius: '2px' }} />
                 </div>
-                <p style={{ fontSize: '13px' }}>65% of your global travel goal</p>
+                <p style={{ fontSize: '13px' }}>{recentTrips.length} active adventures in your log</p>
               </div>
             </div>
 
