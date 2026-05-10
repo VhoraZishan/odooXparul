@@ -4,12 +4,14 @@ import { useParams, Link } from 'react-router-dom';
 import { 
   Calendar, MapPin, DollarSign, Clock, ArrowLeft, 
   ChevronRight, Utensils, Hotel, Car, Camera, Info,
-  TrendingUp, Wallet, PieChart
+  TrendingUp, Wallet, PieChart, Plus
 } from 'lucide-react';
 
 const TripDetailsPage = () => {
   const { id } = useParams();
   const [trip, setTrip] = useState(null);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [newExpense, setNewExpense] = useState({ title: '', amount: '', category: 'food' });
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -85,6 +87,38 @@ const TripDetailsPage = () => {
     fetchTrip();
   }, [id]);
 
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`http://localhost:8000/trips/${id}/billing/expenses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: newExpense.title,
+          amount: parseFloat(newExpense.amount),
+          currency: 'USD',
+          category: newExpense.category,
+          date: new Date().toISOString().split('T')[0]
+        })
+      });
+
+      if (res.ok) {
+        setShowExpenseForm(false);
+        setNewExpense({ title: '', amount: '', category: 'food' });
+        // Refresh the page data by simply calling window.location.reload() or triggering the fetch again
+        window.location.reload(); 
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (!trip) {
     return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading trip details...</div>;
   }
@@ -119,9 +153,25 @@ const TripDetailsPage = () => {
               <span style={{ fontSize: '18px', fontWeight: '500' }}>{trip.location}</span>
             </div>
             <h1 style={{ fontSize: '48px', fontWeight: '800', marginBottom: '16px' }}>{trip.title}</h1>
-            <div style={{ display: 'flex', gap: '24px', opacity: 0.9 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Calendar size={18} /> {trip.startDate} - {trip.endDate}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '24px', opacity: 0.9 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Calendar size={18} /> {trip.startDate} - {trip.endDate}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <Link
+                  to={`/itinerary-view/${id}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.15)', color: 'white', padding: '10px 20px', borderRadius: '99px', fontWeight: '600', fontSize: '14px', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.3)' }}
+                >
+                  View Itinerary
+                </Link>
+                <Link
+                  to={`/build-itinerary/${id}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--primary)', color: 'white', padding: '10px 20px', borderRadius: '99px', fontWeight: '600', fontSize: '14px' }}
+                >
+                  Build Itinerary
+                </Link>
               </div>
             </div>
           </motion.div>
@@ -162,18 +212,20 @@ const TripDetailsPage = () => {
 
                   <div style={{ borderLeft: '2px dashed var(--border)', marginLeft: '25px', paddingLeft: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {day.events.map((event, j) => (
-                      <div key={j} className="card" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border)', boxShadow: 'none' }}>
-                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                          <div style={{ color: 'var(--primary)', background: 'rgba(255, 87, 51, 0.1)', padding: '10px', borderRadius: '10px' }}>
-                            {event.icon}
+                      <Link to={`/itinerary-view/${id}`} key={j} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <motion.div whileHover={{ x: 4 }} className="card" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border)', boxShadow: 'none' }}>
+                          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                            <div style={{ color: 'var(--primary)', background: 'rgba(255, 87, 51, 0.1)', padding: '10px', borderRadius: '10px' }}>
+                              {event.icon}
+                            </div>
+                            <div>
+                              <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>{event.time}</p>
+                              <p style={{ fontWeight: '700' }}>{event.title}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>{event.time}</p>
-                            <p style={{ fontWeight: '700' }}>{event.title}</p>
-                          </div>
-                        </div>
-                        <ChevronRight size={20} style={{ color: 'var(--text-muted)' }} />
-                      </div>
+                          <ChevronRight size={20} style={{ color: 'var(--text-muted)' }} />
+                        </motion.div>
+                      </Link>
                     ))}
                   </div>
                 </motion.div>
@@ -217,30 +269,62 @@ const TripDetailsPage = () => {
                 ))}
               </div>
 
-              <button className="btn-primary" style={{ width: '100%', marginTop: '32px', justifyContent: 'center' }}>
-                <Wallet size={18} /> Add Expense
+              <button 
+                onClick={() => setShowExpenseForm(!showExpenseForm)} 
+                className="btn-primary" 
+                style={{ width: '100%', marginTop: '32px', justifyContent: 'center' }}
+              >
+                <Wallet size={18} /> {showExpenseForm ? 'Cancel' : 'Add Expense'}
               </button>
-            </div>
 
-            {/* Travel Map Placeholder */}
-            <div className="card" style={{ padding: '0', overflow: 'hidden', height: '300px', position: 'relative' }}>
-              <div style={{ 
-                position: 'absolute', 
-                inset: 0, 
-                background: 'url("https://api.mapbox.com/styles/v1/mapbox/light-v10/static/4.3,48.8,12,0/800x600?access_token=placeholder")',
-                backgroundSize: 'cover'
-              }}>
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.05)' }} />
-              </div>
-              <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'white', padding: '12px 20px', borderRadius: '12px', boxShadow: 'var(--shadow)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MapPin size={16} style={{ color: 'var(--primary)' }} />
-                <span style={{ fontWeight: '700', fontSize: '14px' }}>Paris, France</span>
-              </div>
-              <button style={{ position: 'absolute', bottom: '20px', right: '20px', background: 'white', padding: '10px 20px', borderRadius: '99px', fontWeight: '600', fontSize: '13px', boxShadow: 'var(--shadow)' }}>
-                View Full Map
-              </button>
+              {showExpenseForm && (
+                <form onSubmit={handleAddExpense} style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--bg-main)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Description</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. Dinner at Louvre"
+                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                      value={newExpense.title}
+                      onChange={(e) => setNewExpense({...newExpense, title: e.target.value})}
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Amount</label>
+                      <input 
+                        type="number" 
+                        required
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                        value={newExpense.amount}
+                        onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Category</label>
+                      <select 
+                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                        value={newExpense.category}
+                        onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
+                      >
+                        <option value="stay">Stay</option>
+                        <option value="food">Food</option>
+                        <option value="travel">Travel</option>
+                        <option value="fun">Fun</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '10px', fontSize: '14px' }}>
+                    Save Expense
+                  </button>
+                </form>
+              )}
             </div>
-
           </aside>
 
         </div>

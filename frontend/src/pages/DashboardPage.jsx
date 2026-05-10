@@ -197,18 +197,18 @@ const DashboardPage = () => {
           {/* Sidebar */}
           <aside style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             
-            {/* Quick Actions / Budget Highlights */}
+            {/* Quick Actions / Trip Stats Highlights */}
             <div className="card" style={{ padding: '24px', background: 'linear-gradient(135deg, #FF5733, #EC4899)', color: 'white' }}>
-              <h3 style={{ fontSize: '20px', marginBottom: '16px' }}>Budget Summary</h3>
+              <h3 style={{ fontSize: '20px', marginBottom: '16px' }}>Travel Stats</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <p style={{ opacity: 0.8, fontSize: '13px' }}>Total Saved</p>
-                  <p style={{ fontSize: '28px', fontWeight: '800' }}>$12,450</p>
+                  <p style={{ opacity: 0.8, fontSize: '13px' }}>Total Planned Trips</p>
+                  <p style={{ fontSize: '28px', fontWeight: '800' }}>{recentTrips.length}</p>
                 </div>
                 <div style={{ height: '4px', background: 'rgba(255,255,255,0.3)', borderRadius: '2px' }}>
-                  <div style={{ width: '65%', height: '100%', background: 'white', borderRadius: '2px' }} />
+                  <div style={{ width: `${Math.min(recentTrips.length * 10, 100)}%`, height: '100%', background: 'white', borderRadius: '2px' }} />
                 </div>
-                <p style={{ fontSize: '13px' }}>65% of your global travel goal</p>
+                <p style={{ fontSize: '13px' }}>{recentTrips.length} active adventures in your log</p>
               </div>
             </div>
 
