@@ -11,10 +11,14 @@ HOST = os.getenv("DB_HOST")
 PORT = os.getenv("DB_PORT")
 DBNAME = os.getenv("DB_NAME")
 
+import urllib.parse
+
+# URL-encode the password to safely handle special characters like @
+encoded_password = urllib.parse.quote_plus(PASSWORD) if PASSWORD else ""
+
 DATABASE_URL = (
     f"postgresql+psycopg2://"
-    f"{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
-    f"?sslmode=require"
+    f"{USER}:{encoded_password}@{HOST}:{PORT}/{DBNAME}"
 )
 
 engine = create_engine(DATABASE_URL)
