@@ -245,10 +245,16 @@ const TripDetailsPage = () => {
 
               <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                 <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '8px' }}>Total Remaining</p>
-                <p style={{ fontSize: '36px', fontWeight: '800', color: 'var(--primary)' }}>${trip.budget.total - trip.budget.spent}</p>
-                <p style={{ fontSize: '12px', fontWeight: '600', background: 'rgba(34, 197, 94, 0.1)', color: '#22C55E', padding: '4px 12px', borderRadius: '99px', display: 'inline-block', marginTop: '12px' }}>
-                  On track to save $200
+                <p style={{ fontSize: '36px', fontWeight: '800', color: 'var(--primary)' }}>
+                  {trip.budget.total > 0 
+                    ? `$${(trip.budget.total - trip.budget.spent).toLocaleString()}`
+                    : 'No budget set'}
                 </p>
+                {trip.budget.total > 0 && (
+                  <p style={{ fontSize: '12px', fontWeight: '600', background: 'rgba(34, 197, 94, 0.1)', color: '#22C55E', padding: '4px 12px', borderRadius: '99px', display: 'inline-block', marginTop: '12px' }}>
+                    {Math.round((trip.budget.spent / trip.budget.total) * 100)}% of budget used
+                  </p>
+                )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -261,7 +267,7 @@ const TripDetailsPage = () => {
                     <div style={{ height: '6px', background: 'var(--bg-main)', borderRadius: '3px', overflow: 'hidden' }}>
                       <motion.div 
                         initial={{ width: 0 }}
-                        animate={{ width: `${(cat.spent / trip.budget.total) * 100 * 4}%` }}
+                        animate={{ width: `${trip.budget.total > 0 ? Math.min((cat.spent / trip.budget.total) * 100, 100) : 0}%` }}
                         style={{ height: '100%', background: cat.color }}
                       />
                     </div>
