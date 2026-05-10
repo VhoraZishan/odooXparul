@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
 import { 
@@ -9,44 +9,85 @@ import {
 
 const TripDetailsPage = () => {
   const { id } = useParams();
+  const [trip, setTrip] = useState(null);
 
-  // Mock data for the specific trip
-  const trip = {
-    title: 'Summer in Europe',
-    location: 'France & Italy',
-    startDate: 'June 01, 2025',
-    endDate: 'June 15, 2025',
-    banner: '/images/paris.png',
-    budget: {
-      total: 2500,
-      spent: 1200,
-      categories: [
-        { name: 'Stay', spent: 600, color: '#FF5733' },
-        { name: 'Food', spent: 300, color: '#EC4899' },
-        { name: 'Travel', spent: 200, color: '#0EA5E9' },
-        { name: 'Fun', spent: 100, color: '#F59E0B' },
-      ]
-    },
-    itinerary: [
-      {
-        day: 1,
-        date: 'June 01',
-        events: [
-          { time: '10:00 AM', title: 'Arrival at CDG Airport', icon: <Car size={18} />, type: 'transport' },
-          { time: '02:00 PM', title: 'Check-in at Hotel Plaza', icon: <Hotel size={18} />, type: 'stay' },
-          { time: '07:00 PM', title: 'Dinner at Le Jules Verne', icon: <Utensils size={18} />, type: 'food' },
-        ]
-      },
-      {
-        day: 2,
-        date: 'June 02',
-        events: [
-          { time: '09:00 AM', title: 'Eiffel Tower Tour', icon: <Camera size={18} />, type: 'activity' },
-          { time: '01:00 PM', title: 'Louvre Museum Visit', icon: <Info size={18} />, type: 'activity' },
-        ]
+  useEffect(() => {
+    const fetchTrip = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const [tripRes, itineraryRes, budgetRes, expensesRes] = await Promise.all([
+          fetch(`http://localhost:8000/trips/${id}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`http://localhost:8000/trips/${id}/itinerary`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`http://localhost:8000/trips/${id}/billing/budget-insights`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`http://localhost:8000/trips/${id}/billing/expenses`, { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        if (tripRes.ok) {
+          const tripData = await tripRes.json();
+          const itineraryData = itineraryRes.ok ? await itineraryRes.json() : { accommodations: [], activities: [], flights: [], transportation: [] };
+          const budgetData = budgetRes.ok ? await budgetRes.json() : { total_budget: 0, total_spent: 0, remaining: 0 };
+          const expensesData = expensesRes.ok ? await expensesRes.json() : [];
+
+          // Process itinerary into day-by-day format (mocking days based on data presence for simplicity)
+          const allEvents = [
+            ...(itineraryData.flights || []).map(f => ({ time: f.departure_time ? new Date(f.departure_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBD', title: `Flight: ${f.airline} ${f.flight_number}`, icon: <Camera size={18} />, type: 'flight' })),
+            ...(itineraryData.transportation || []).map(t => ({ time: t.departure_time ? new Date(t.departure_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBD', title: `${t.type}: ${t.company}`, icon: <Car size={18} />, type: 'transport' })),
+            ...(itineraryData.accommodations || []).map(a => ({ time: a.check_in ? new Date(a.check_in).toLocaleDateString() : 'TBD', title: `Check-in: ${a.name}`, icon: <Hotel size={18} />, type: 'stay' })),
+            ...(itineraryData.activities || []).map(a => ({ time: a.start_time ? new Date(a.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBD', title: a.name, icon: <Info size={18} />, type: 'activity' }))
+          ];
+
+          const formattedItinerary = allEvents.length > 0 ? [{
+            day: 1,
+            date: tripData.start_date || 'Day 1',
+            events: allEvents
+          }] : [{
+            day: 1,
+            date: tripData.start_date || 'Day 1',
+            events: [{ time: '10:00 AM', title: 'Trip Start', icon: <Calendar size={18} />, type: 'activity' }]
+          }];
+
+          // Process expenses into categories
+          const categoryTotals = expensesData.reduce((acc, exp) => {
+            acc[exp.category] = (acc[exp.category] || 0) + parseFloat(exp.amount);
+            return acc;
+          }, {});
+
+          const colors = ['#FF5733', '#EC4899', '#0EA5E9', '#F59E0B', '#8B5CF6'];
+          const formattedCategories = Object.keys(categoryTotals).map((cat, index) => ({
+            name: cat.charAt(0).toUpperCase() + cat.slice(1),
+            spent: categoryTotals[cat],
+            color: colors[index % colors.length]
+          }));
+
+          setTrip({
+            title: tripData.title,
+            location: tripData.description && tripData.description.includes('Intended Destination: ') 
+              ? tripData.description.split('Intended Destination: ')[1] 
+              : 'Custom Destination',
+            startDate: tripData.start_date || 'TBD',
+            endDate: tripData.end_date || 'TBD',
+            banner: '/images/paris.png',
+            budget: {
+              total: parseFloat(budgetData.total_budget) || 2500,
+              spent: parseFloat(budgetData.total_spent) || 0,
+              categories: formattedCategories.length > 0 ? formattedCategories : [
+                { name: 'Uncategorized', spent: 0, color: '#FF5733' }
+              ]
+            },
+            itinerary: formattedItinerary
+          });
+        }
+      } catch (err) {
+        console.error(err);
       }
-    ]
-  };
+    };
+    fetchTrip();
+  }, [id]);
+
+  if (!trip) {
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading trip details...</div>;
+  }
 
   return (
     <div className="trip-details-container" style={{ minHeight: '100vh', background: 'var(--bg-main)', paddingBottom: '100px' }}>

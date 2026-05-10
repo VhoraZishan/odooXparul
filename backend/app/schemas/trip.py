@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime
 from uuid import UUID
+from decimal import Decimal
 
 class TripBase(BaseModel):
     title: str
@@ -11,6 +12,7 @@ class TripBase(BaseModel):
     end_date: Optional[date] = None
     is_public: Optional[bool] = False
     currency: Optional[str] = "USD"
+    budget_amount: Optional[Decimal] = None
 
 class TripCreate(TripBase):
     pass
