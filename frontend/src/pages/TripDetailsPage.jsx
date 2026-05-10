@@ -6,6 +6,7 @@ import {
   ChevronRight, Utensils, Hotel, Car, Camera, Info,
   TrendingUp, Wallet, PieChart, Plus
 } from 'lucide-react';
+import { fetchAPI } from '../api';
 
 const TripDetailsPage = () => {
   const { id } = useParams();
@@ -18,18 +19,14 @@ const TripDetailsPage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const [tripRes, itineraryRes, budgetRes, expensesRes] = await Promise.all([
-          fetch(`http://localhost:8000/trips/${id}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`http://localhost:8000/trips/${id}/itinerary`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`http://localhost:8000/trips/${id}/billing/budget-insights`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`http://localhost:8000/trips/${id}/billing/expenses`, { headers: { 'Authorization': `Bearer ${token}` } })
+        const [tripData, itineraryData, budgetData, expensesData] = await Promise.all([
+          fetchAPI(`/trips/${id}`).catch(() => null),
+          fetchAPI(`/trips/${id}/itinerary`).catch(() => ({ accommodations: [], activities: [], flights: [], transportation: [] })),
+          fetchAPI(`/trips/${id}/billing/budget-insights`).catch(() => ({ total_budget: 0, total_spent: 0, remaining: 0 })),
+          fetchAPI(`/trips/${id}/billing/expenses`).catch(() => [])
         ]);
 
-        if (tripRes.ok) {
-          const tripData = await tripRes.json();
-          const itineraryData = itineraryRes.ok ? await itineraryRes.json() : { accommodations: [], activities: [], flights: [], transportation: [] };
-          const budgetData = budgetRes.ok ? await budgetRes.json() : { total_budget: 0, total_spent: 0, remaining: 0 };
-          const expensesData = expensesRes.ok ? await expensesRes.json() : [];
+        if (tripData) {
 
           // Process itinerary into day-by-day format (mocking days based on data presence for simplicity)
           const allEvents = [
@@ -93,12 +90,8 @@ const TripDetailsPage = () => {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:8000/trips/${id}/billing/expenses`, {
+      await fetchAPI(`/trips/${id}/billing/expenses`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           title: newExpense.title,
           amount: parseFloat(newExpense.amount),
@@ -108,12 +101,9 @@ const TripDetailsPage = () => {
         })
       });
 
-      if (res.ok) {
-        setShowExpenseForm(false);
-        setNewExpense({ title: '', amount: '', category: 'food' });
-        // Refresh the page data by simply calling window.location.reload() or triggering the fetch again
-        window.location.reload(); 
-      }
+      setShowExpenseForm(false);
+      setNewExpense({ title: '', amount: '', category: 'food' });
+      window.location.reload(); 
     } catch (err) {
       console.error(err);
     }

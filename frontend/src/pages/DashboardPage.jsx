@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, MapPin, Calendar, Users, DollarSign, ArrowRight, TrendingUp, Compass, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { fetchAPI } from '../api';
 
 const DashboardPage = () => {
   const [recentTrips, setRecentTrips] = useState([]);
@@ -19,22 +20,12 @@ const DashboardPage = () => {
 
       try {
         // Fetch user profile for the real name
-        const profileRes = await fetch('http://localhost:8000/users/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (profileRes.ok) {
-          const profile = await profileRes.json();
-          if (profile.full_name) {
-            setUserName(profile.full_name.split(' ')[0]);
-          }
+        const profileRes = await fetchAPI('/users/me');
+        if (profileRes.full_name) {
+          setUserName(profileRes.full_name.split(' ')[0]);
         }
 
-        const res = await fetch('http://localhost:8000/users/me/trips', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
+        const data = await fetchAPI('/users/me/trips');
           const formattedTrips = [];
           const colors = { upcoming: '#FF5733', ongoing: '#EC4899', completed: '#0EA5E9' };
           
@@ -54,21 +45,19 @@ const DashboardPage = () => {
               });
             }
           });
+          });
           setRecentTrips(formattedTrips);
         }
 
-        const exploreRes = await fetch('http://localhost:8000/explore/destinations');
-        if (exploreRes.ok) {
-          const exploreData = await exploreRes.json();
-          if (exploreData.length > 0) {
-            setRecommendations(exploreData.slice(0, 3).map((dest, i) => ({
-              id: dest.id,
-              city: dest.name,
-              country: dest.country || '',
-              img: `/images/${['paris', 'tokyo', 'bali'][i % 3]}.png`,
-              price: 'Explore'
-            })));
-          }
+        const exploreData = await fetchAPI('/explore/destinations');
+        if (exploreData.length > 0) {
+          setRecommendations(exploreData.slice(0, 3).map((dest, i) => ({
+            id: dest.id,
+            city: dest.name,
+            country: dest.country || '',
+            img: `/images/${['paris', 'tokyo', 'bali'][i % 3]}.png`,
+            price: 'Explore'
+          })));
         }
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
