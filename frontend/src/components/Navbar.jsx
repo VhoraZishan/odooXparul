@@ -38,18 +38,10 @@ const Navbar = () => {
         </Link>
         <div style={{ display: 'flex', gap: '32px', alignItems: 'center', fontWeight: '500' }}>
           <Link to="/">Home</Link>
-          <Link to="#">About us</Link>
-          <Link to="#">Features</Link>
-          {isAuthenticated && (
-            <>
-              <Link to="/create-trip" style={{ color: 'var(--primary)' }}>Plan Trip</Link>
-              <Link to="#">My trips</Link>
-              <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 20px', fontSize: '14px', cursor: 'pointer', border: 'none' }}>Logout</button>
-            </>
-          )}
-          {!isAuthenticated && (
-            <Link to="/auth" className="btn-secondary" style={{ padding: '8px 20px', fontSize: '14px' }}>Login</Link>
-          )}
+          <Link to="/build-itinerary/1">Build Itinerary</Link>
+          <Link to="/itinerary-view/1">View Itinerary</Link>
+          <Link to="/create-trip" style={{ color: 'var(--primary)' }}>Plan Trip</Link>
+          <Link to="/auth" className="btn-secondary" style={{ padding: '8px 20px', fontSize: '14px' }}>Login</Link>
         </div>
       </div>
     </nav>
